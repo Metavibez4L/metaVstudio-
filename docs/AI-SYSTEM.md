@@ -273,10 +273,12 @@ The agent system integrates with [OpenClaw](https://docs.openclaw.ai/) (v2026.3.
 
 ### Configuration
 
-**Root config** — `openclaw.json`:
-- Defines 7 agents with per-agent tool profiles
-- Sets gateway port (18789), loop detection, default model
-- Each agent has `allow`/`deny` tool lists and a profile (`full` or `coding`)
+**Root config** — `openclaw.json` (synced with [docs.openclaw.ai](https://docs.openclaw.ai/gateway/configuration-reference)):
+- Defines 7 agents with per-agent tool profiles and identity (name, theme, emoji)
+- Ollama provider configured under `models.providers.ollama` (localhost:11434)
+- Gateway: local mode, port 18789, loopback bind
+- Tool loop detection enabled (warning:8 / critical:16 / circuit-breaker:30)
+- UI branded with project `seamColor` (#00f0ff) and assistant identity
 
 **Agent workspaces** — `.openclaw/workspaces/{agent}/SOUL.md`:
 - Agent identity, personality, role definition
@@ -319,14 +321,13 @@ API Request → Orchestrator.resolveMode()
 
 | Group | Tools | Used By |
 |-------|-------|---------|
-| `group:fs` | read_file, write_file, edit_file, apply_patch | All agents |
+| `group:fs` | read, write, edit, apply_patch | All agents |
 | `group:runtime` | exec, process (shell) | EP, Post Supervisor, Asset Librarian |
 | `group:web` | web_search, web_fetch | EP, Creative Dir, Script, Shot, Post, Campaign |
 | `group:memory` | memory_search, memory_get | All agents |
 | `group:sessions` | spawn, send, list, status | EP (sub-agent routing) |
 | `browser` | Headless browser | Creative Dir, Campaign Strategist |
 | `image` | Image gen/analysis | EP, Creative Dir, Shot Planner, Asset Librarian |
-| `pdf` | PDF reading/creation | Post Supervisor |
 
 ---
 

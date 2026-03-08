@@ -1,9 +1,9 @@
 {
-  "$schema": "https://openclaw.ai/schema/config.json",
   "agents": {
     "defaults": {
       "workspace": "./.openclaw/workspaces/main",
-      "model": "ollama/kimi-k2.5:cloud"
+      "model": "ollama/kimi-k2.5:cloud",
+      "userTimezone": "America/Los_Angeles"
     },
     "list": [
       {
@@ -11,7 +11,11 @@
         "name": "Executive Producer",
         "default": true,
         "workspace": "./.openclaw/workspaces/executive-producer",
-        "identity": { "name": "Executive Producer" },
+        "identity": {
+          "name": "Executive Producer",
+          "theme": "visionary film producer",
+          "emoji": "🎬"
+        },
         "tools": {
           "profile": "full",
           "deny": ["canvas", "nodes", "cron", "message"],
@@ -22,7 +26,6 @@
             "group:web",
             "group:runtime",
             "session_status",
-            "agents_list",
             "image"
           ]
         },
@@ -34,7 +37,11 @@
         "id": "creative-director",
         "name": "Creative Director",
         "workspace": "./.openclaw/workspaces/creative-director",
-        "identity": { "name": "Creative Director" },
+        "identity": {
+          "name": "Creative Director",
+          "theme": "artistic vision lead",
+          "emoji": "🎨"
+        },
         "tools": {
           "profile": "coding",
           "allow": [
@@ -51,7 +58,11 @@
         "id": "script-architect",
         "name": "Script Architect",
         "workspace": "./.openclaw/workspaces/script-architect",
-        "identity": { "name": "Script Architect" },
+        "identity": {
+          "name": "Script Architect",
+          "theme": "narrative structure expert",
+          "emoji": "📝"
+        },
         "tools": {
           "profile": "coding",
           "allow": [
@@ -66,7 +77,11 @@
         "id": "shot-planner",
         "name": "Shot Planner",
         "workspace": "./.openclaw/workspaces/shot-planner",
-        "identity": { "name": "Shot Planner" },
+        "identity": {
+          "name": "Shot Planner",
+          "theme": "cinematography specialist",
+          "emoji": "📷"
+        },
         "tools": {
           "profile": "coding",
           "allow": [
@@ -82,15 +97,18 @@
         "id": "post-supervisor",
         "name": "Post Supervisor",
         "workspace": "./.openclaw/workspaces/post-supervisor",
-        "identity": { "name": "Post Supervisor" },
+        "identity": {
+          "name": "Post Supervisor",
+          "theme": "post-production workflow manager",
+          "emoji": "🎞️"
+        },
         "tools": {
           "profile": "coding",
           "allow": [
             "group:fs",
             "group:runtime",
             "group:web",
-            "group:memory",
-            "pdf"
+            "group:memory"
           ],
           "deny": ["browser", "canvas", "nodes", "cron", "message", "image"]
         }
@@ -99,7 +117,11 @@
         "id": "campaign-strategist",
         "name": "Campaign Strategist",
         "workspace": "./.openclaw/workspaces/campaign-strategist",
-        "identity": { "name": "Campaign Strategist" },
+        "identity": {
+          "name": "Campaign Strategist",
+          "theme": "marketing and distribution planner",
+          "emoji": "📢"
+        },
         "tools": {
           "profile": "coding",
           "allow": [
@@ -115,7 +137,11 @@
         "id": "asset-librarian",
         "name": "Asset Librarian",
         "workspace": "./.openclaw/workspaces/asset-librarian",
-        "identity": { "name": "Asset Librarian" },
+        "identity": {
+          "name": "Asset Librarian",
+          "theme": "media asset organization specialist",
+          "emoji": "📚"
+        },
         "tools": {
           "profile": "coding",
           "allow": [
@@ -129,6 +155,25 @@
       }
     ]
   },
+  "models": {
+    "providers": {
+      "ollama": {
+        "baseUrl": "http://localhost:11434/v1",
+        "api": "openai-completions",
+        "injectNumCtxForOpenAICompat": true,
+        "models": [
+          {
+            "id": "kimi-k2.5:cloud",
+            "name": "Kimi K2.5 Cloud",
+            "reasoning": false,
+            "input": ["text"],
+            "contextWindow": 131072,
+            "maxTokens": 32000
+          }
+        ]
+      }
+    }
+  },
   "tools": {
     "profile": "coding",
     "web": {
@@ -137,11 +182,27 @@
     },
     "loopDetection": {
       "enabled": true,
+      "historySize": 30,
       "warningThreshold": 8,
-      "criticalThreshold": 16
+      "criticalThreshold": 16,
+      "globalCircuitBreakerThreshold": 30,
+      "detectors": {
+        "genericRepeat": true,
+        "knownPollNoProgress": true,
+        "pingPong": true
+      }
     }
   },
   "gateway": {
-    "port": 18789
+    "mode": "local",
+    "port": 18789,
+    "bind": "loopback"
+  },
+  "ui": {
+    "seamColor": "#00f0ff",
+    "assistant": {
+      "name": "metaVstudio",
+      "avatar": "🎬"
+    }
   }
 }
