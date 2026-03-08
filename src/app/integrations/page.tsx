@@ -25,7 +25,7 @@ import {
   SlidersHorizontal,
   Eye,
 } from 'lucide-react';
-import type { IntegrationStatus, AgentTaskCategory } from '@/lib/integrations/types';
+import type { IntegrationStatus, IntegrationHealth, AgentTaskCategory } from '@/lib/integrations/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,7 +72,7 @@ export default async function IntegrationsPage() {
   const watchFolders = getDefaultWatchFolders();
   const watchEvents = getRecentEvents(10);
 
-  const onlineCount = health.filter(h => h.status === 'online').length;
+  const onlineCount = health.filter((h: IntegrationHealth) => h.status === 'online').length;
 
   return (
     <div className="space-y-6">
@@ -101,7 +101,7 @@ export default async function IntegrationsPage() {
 
       {/* Integration Status Grid */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {health.map((h) => {
+        {health.map((h: IntegrationHealth) => {
           const Icon = INTEGRATION_ICONS[h.id] || Plug;
           const colors = INTEGRATION_COLORS[h.id] || { text: 'text-muted', glow: 'rgba(100,100,100,0.08)', border: 'border-border/20' };
           const statusCfg = STATUS_CONFIG[h.status];
@@ -133,8 +133,8 @@ export default async function IntegrationsPage() {
               <Terminal className="h-4 w-4 text-[#00f0ff]" />
               <h2 className="text-xs font-mono font-semibold tracking-wider text-[#00f0ff]">APPLESCRIPT::AUTOMATION</h2>
             </div>
-            <span className={`text-[10px] font-mono tracking-wider ${STATUS_CONFIG[health.find(h => h.id === 'applescript')?.status || 'disabled'].color}`}>
-              {health.find(h => h.id === 'applescript')?.status.toUpperCase()}
+            <span className={`text-[10px] font-mono tracking-wider ${STATUS_CONFIG[(health.find((h: IntegrationHealth) => h.id === 'applescript')?.status || 'disabled') as IntegrationStatus].color}`}>
+              {health.find((h: IntegrationHealth) => h.id === 'applescript')?.status.toUpperCase()}
             </span>
           </div>
           <div className="p-4 space-y-3">
@@ -162,8 +162,8 @@ export default async function IntegrationsPage() {
               <Smartphone className="h-4 w-4 text-[#bf5af2]" />
               <h2 className="text-xs font-mono font-semibold tracking-wider text-[#bf5af2]">MACOS::SHORTCUTS</h2>
             </div>
-            <span className={`text-[10px] font-mono tracking-wider ${STATUS_CONFIG[health.find(h => h.id === 'shortcuts')?.status || 'disabled'].color}`}>
-              {health.find(h => h.id === 'shortcuts')?.status.toUpperCase()}
+            <span className={`text-[10px] font-mono tracking-wider ${STATUS_CONFIG[(health.find((h: IntegrationHealth) => h.id === 'shortcuts')?.status || 'disabled') as IntegrationStatus].color}`}>
+              {health.find((h: IntegrationHealth) => h.id === 'shortcuts')?.status.toUpperCase()}
             </span>
           </div>
           <div className="p-4 space-y-3">
@@ -192,8 +192,8 @@ export default async function IntegrationsPage() {
               <FolderSearch className="h-4 w-4 text-[#39ff14]" />
               <h2 className="text-xs font-mono font-semibold tracking-wider text-[#39ff14]">FOLDER::WATCHERS</h2>
             </div>
-            <span className={`text-[10px] font-mono tracking-wider ${STATUS_CONFIG[health.find(h => h.id === 'folder-watcher')?.status || 'disabled'].color}`}>
-              {health.find(h => h.id === 'folder-watcher')?.status.toUpperCase()}
+            <span className={`text-[10px] font-mono tracking-wider ${STATUS_CONFIG[(health.find((h: IntegrationHealth) => h.id === 'folder-watcher')?.status || 'disabled') as IntegrationStatus].color}`}>
+              {health.find((h: IntegrationHealth) => h.id === 'folder-watcher')?.status.toUpperCase()}
             </span>
           </div>
           <div className="p-4 space-y-3">
@@ -231,8 +231,8 @@ export default async function IntegrationsPage() {
               <Radio className="h-4 w-4 text-[#ff3366]" />
               <h2 className="text-xs font-mono font-semibold tracking-wider text-[#ff3366]">OBS::WEBSOCKET</h2>
             </div>
-            <span className={`text-[10px] font-mono tracking-wider ${STATUS_CONFIG[health.find(h => h.id === 'obs')?.status || 'disabled'].color}`}>
-              {health.find(h => h.id === 'obs')?.status.toUpperCase()}
+            <span className={`text-[10px] font-mono tracking-wider ${STATUS_CONFIG[(health.find((h: IntegrationHealth) => h.id === 'obs')?.status || 'disabled') as IntegrationStatus].color}`}>
+              {health.find((h: IntegrationHealth) => h.id === 'obs')?.status.toUpperCase()}
             </span>
           </div>
           <div className="p-4 space-y-3">
@@ -270,8 +270,8 @@ export default async function IntegrationsPage() {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-mono text-muted/40 tracking-wider">{presets.length} PRESETS</span>
-            <span className={`text-[10px] font-mono tracking-wider ${STATUS_CONFIG[health.find(h => h.id === 'export-pipeline')?.status || 'disabled'].color}`}>
-              {health.find(h => h.id === 'export-pipeline')?.status.toUpperCase()}
+            <span className={`text-[10px] font-mono tracking-wider ${STATUS_CONFIG[(health.find((h: IntegrationHealth) => h.id === 'export-pipeline')?.status || 'disabled') as IntegrationStatus].color}`}>
+              {health.find((h: IntegrationHealth) => h.id === 'export-pipeline')?.status.toUpperCase()}
             </span>
           </div>
         </div>
