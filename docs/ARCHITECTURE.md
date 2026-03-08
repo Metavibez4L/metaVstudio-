@@ -27,6 +27,7 @@ metaVstudio-/
 │   │   ├── campaigns/page.tsx     # Campaign management
 │   │   ├── post/page.tsx          # Post-production / edit versions
 │   │   ├── assistant/page.tsx     # AI Director (chat interface)
+│   │   ├── agents/page.tsx        # Agent production team dashboard
 │   │   ├── assets/page.tsx        # Cross-project asset library
 │   │   ├── settings/page.tsx      # Creator preferences
 │   │   ├── projects/              # Legacy project pages
@@ -37,6 +38,9 @@ metaVstudio-/
 │   │   ├── actions.ts             # Legacy server actions
 │   │   ├── production-actions.ts  # Production server actions
 │   │   └── api/
+│   │       ├── agents/
+│   │       │   ├── invoke/route.ts    # Agent invocation + orchestration
+│   │       │   └── directory/route.ts # Agent roster & capabilities
 │   │       ├── ai/
 │   │       │   ├── chat/route.ts     # AI Director chat endpoint
 │   │       │   ├── generate/route.ts # Content generation endpoint
@@ -44,7 +48,7 @@ metaVstudio-/
 │   │       ├── health/route.ts       # System health check
 │   │       └── preferences/route.ts  # Settings API
 │   ├── components/
-│   │   ├── Sidebar.tsx               # Navigation (11 items)
+│   │   ├── Sidebar.tsx               # Navigation (12 items)
 │   │   ├── ProductionCreateButton.tsx # New production modal
 │   │   ├── ProductionEditor.tsx       # Production CRUD + status pipeline
 │   │   ├── ProjectCreateButton.tsx    # Legacy project modal
@@ -58,6 +62,21 @@ metaVstudio-/
 │       ├── db.ts                  # SQLite init + schema (15 tables)
 │       ├── data.ts                # Legacy CRUD (projects, assets, drafts)
 │       ├── production-data.ts     # Production CRUD (543 lines, 9 entities)
+│       ├── agents/                # Multi-agent production system
+│       │   ├── types.ts           # Agent contracts, task schemas, output types
+│       │   ├── base-agent.ts      # BaseAgent abstract class
+│       │   ├── context.ts         # ProductionContext builder from DB
+│       │   ├── registry.ts        # Agent registry singleton
+│       │   ├── orchestrator.ts    # EP dispatch engine + orchestration
+│       │   ├── index.ts           # Public barrel exports
+│       │   └── agents/
+│       │       ├── executive-producer.ts
+│       │       ├── creative-director.ts
+│       │       ├── script-architect.ts
+│       │       ├── shot-planner.ts
+│       │       ├── post-supervisor.ts
+│       │       ├── campaign-strategist.ts
+│       │       └── asset-librarian.ts
 │       ├── ai/
 │       │   └── provider.ts        # AI provider abstraction + content prompts
 │       ├── config/
@@ -116,6 +135,14 @@ metaVstudio-/
 └─────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────┐
+│              Agent Layer                         │
+│  7 production agents (BaseAgent subclasses)      │
+│  Registry → Orchestrator → Handoff Protocol      │
+│  EP coordinates, specialists execute in-role     │
+│  40+ task types → typed structured outputs       │
+└─────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────┐
 │              Config Layer                        │
 │  env.ts → getConfig() singleton                  │
 │  Profiles: laptop / studio / cloud               │
@@ -170,6 +197,8 @@ User Input → Client fetch('/api/ai/chat')
 5. **Preserving legacy** — v1 project system kept intact alongside v2 production system. Both data layers coexist, letting users migrate at their own pace.
 
 6. **Config-driven deployment** — `DEPLOYMENT_PROFILE` env var switches between laptop/studio/cloud presets, changing AI models, storage paths, and feature flags.
+
+7. **Multi-agent orchestration** — 7 specialized agents with clear roles and boundaries. Executive Producer coordinates, specialists stay in-role. Handoff protocol chains work across agents. Laptop mode runs sequential inline; studio mode enables parallel execution.
 
 ---
 

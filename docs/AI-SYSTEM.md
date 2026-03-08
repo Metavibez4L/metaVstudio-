@@ -191,13 +191,81 @@ The assistant page offers production-focused quick prompts:
 
 ---
 
-## Future: Task Runner Integration
+## Multi-Agent Production System
+
+The agent system (`src/lib/agents/`) provides a disciplined multi-agent architecture for production workflows.
+
+### Architecture
+
+```
+src/lib/agents/
+├── types.ts              # Agent contracts, 40+ task types, typed outputs
+├── base-agent.ts         # BaseAgent abstract class (AI provider, parsing)
+├── context.ts            # Builds ProductionContext from DB
+├── registry.ts           # Agent registry singleton
+├── orchestrator.ts       # EP dispatch + multi-agent orchestration
+├── index.ts              # Public barrel
+└── agents/
+    ├── executive-producer.ts   # Orchestrator → routes, tracks, prioritizes
+    ├── creative-director.ts    # Vision → briefs, treatments, concepts
+    ├── script-architect.ts     # Narrative → scripts, hooks, VO, CTAs
+    ├── shot-planner.ts         # Visual → shot lists, coverage, camera
+    ├── post-supervisor.ts      # Editorial → edit plans, delivery, QC
+    ├── campaign-strategist.ts  # Distribution → ads, copy, repurposing
+    └── asset-librarian.ts      # Organization → maps, tags, naming
+```
+
+### Agent API Endpoints
+
+**Direct Invocation — `POST /api/agents/invoke`**
+```json
+{
+  "taskType": "creative-brief",
+  "goal": "Create a brief for a luxury watch brand film",
+  "productionId": "uuid-here",
+  "platform": "youtube"
+}
+```
+
+**Orchestrated Execution — `POST /api/agents/invoke`**
+```json
+{
+  "orchestrate": true,
+  "goal": "Plan the full pre-production for this project",
+  "productionId": "uuid-here"
+}
+```
+
+**Agent Directory — `GET /api/agents/directory`**
+Returns all agents, capabilities, hierarchy.
+
+### Handoff Protocol
+
+Agents return `HandoffRequest[]` to trigger work in other agents:
+- Creative Director → Script Architect (after brief/treatment)
+- Creative Director → Campaign Strategist (after campaign concept)
+- Script Architect → Shot Planner (after scripts)
+- Shot Planner → Post Supervisor (after shot design)
+- Post Supervisor → Campaign Strategist (after delivery matrix)
+- Post Supervisor → Asset Librarian (after edit plan)
+
+### Execution Modes
+
+| Mode | Behavior |
+|------|----------|
+| **Laptop** | Sequential inline execution, 1-level handoff depth |
+| **Studio** | Parallel execution, 2-level handoff depth, 4 concurrent AI |
+| **Cloud** | Full parallel, 8 concurrent AI, OpenAI provider |
+
+---
+
+## Task Runner Integration
 
 The runtime layer (`src/lib/runtime/task-runner.ts`) provides infrastructure for:
 
 - Queued AI generation tasks
 - Background content processing
-- Multi-step agent workflows (e.g., auto-generate brief → scenes → shots)
+- Multi-step agent workflows (agent system now implements this)
 - Priority-based task scheduling
 
 This layer is built but not yet wired to the UI.
