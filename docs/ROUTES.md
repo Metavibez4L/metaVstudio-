@@ -31,6 +31,7 @@
 | `/assets` | ƒ Dynamic | `assets/page.tsx` | Cross-project asset library (100 recent) |
 | `/assistant` | ○ Static | `assistant/page.tsx` | AI Director chat interface (client-side) |
 | `/agents` | ƒ Dynamic | `agents/page.tsx` | Agent production team: hierarchy, status, capabilities |
+| `/integrations` | ƒ Dynamic | `integrations/page.tsx` | Integration dashboard: 6 modules, health status, controls |
 | `/settings` | ƒ Dynamic | `settings/page.tsx` | Creator preferences editor |
 
 ### Legacy System (Preserved)
@@ -51,14 +52,16 @@
 | `/api/ai/publish` | POST | Publish-optimized copy generation |
 | `/api/health` | GET | System health: DB, AI, storage, config status |
 | `/api/preferences` | GET/PUT | Read and write creator preferences |
-| `/api/agents/invoke` | POST | Direct agent invocation or EP-orchestrated multi-agent execution |
-| `/api/agents/directory` | GET | Agent roster, capabilities, hierarchy |
+| `/api/agents/invoke` | POST | Agent invocation or EP-orchestrated execution. Supports `mode`: direct/openclaw/auto |
+| `/api/agents/directory` | GET | Agent roster, capabilities, hierarchy, OpenClaw status + tool profiles |
+| `/api/integrations` | GET | Integration health status for all 6 modules, export presets, active watchers |
+| `/api/integrations` | POST | Execute integration actions (applescript, shortcuts, obs, folder-watcher, export, agent-tasks) |
 
 ---
 
 ## Navigation (Sidebar)
 
-The sidebar provides 12 navigation items, organized by production workflow:
+The sidebar provides 13 navigation items, organized by production workflow:
 
 ```
 COMMAND          →  /dashboard      (LayoutDashboard)
@@ -71,6 +74,7 @@ CAMPAIGNS        →  /campaigns      (Megaphone)
 POST             →  /post           (SlidersHorizontal)
 AI DIRECTOR      →  /assistant      (Sparkles)
 AGENTS           →  /agents         (Bot)
+INTEGRATE        →  /integrations   (Plug)
 ASSETS           →  /assets         (FolderOpen)
 CONFIG           →  /settings       (Settings)
 ```

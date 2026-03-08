@@ -1,5 +1,7 @@
 import { getProjects, getProjectCounts, getRecentAssets } from '@/lib/data';
 import { getProductions, getProductionCounts } from '@/lib/production-data';
+import { getOpenClawStatus, getAgentDirectory, AGENT_DISPLAY_NAMES, AGENT_ROLES } from '@/lib/agents';
+import type { AgentRole } from '@/lib/agents';
 import Link from 'next/link';
 import {
   Film,
@@ -16,18 +18,48 @@ import {
   Package,
   Megaphone,
   SlidersHorizontal,
+  Bot,
+  Shield,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 import { STATUS_LABELS, STATUS_COLORS, PROJECT_TYPE_LABELS, PRODUCTION_STATUS_LABELS, PRODUCTION_STATUS_COLORS, PRODUCTION_TYPE_LABELS } from '@/lib/types';
 import type { ProjectStatus, ProductionStatus } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
-export default function DashboardPage() {
+const AGENT_TOOL_ICONS: Record<string, string> = {
+  'executive-producer': 'full',
+  'creative-director': 'coding',
+  'script-architect': 'coding',
+  'shot-planner': 'coding',
+  'post-supervisor': 'coding',
+  'campaign-strategist': 'coding',
+  'asset-librarian': 'coding',
+};
+
+const AGENT_COLORS: Record<string, { text: string; glow: string }> = {
+  'executive-producer': { text: 'text-[#00f0ff]', glow: 'rgba(0,240,255,0.08)' },
+  'creative-director': { text: 'text-[#bf5af2]', glow: 'rgba(191,90,242,0.08)' },
+  'script-architect': { text: 'text-[#ffb800]', glow: 'rgba(255,184,0,0.08)' },
+  'shot-planner': { text: 'text-[#39ff14]', glow: 'rgba(57,255,20,0.08)' },
+  'post-supervisor': { text: 'text-[#ff3366]', glow: 'rgba(255,51,102,0.08)' },
+  'campaign-strategist': { text: 'text-[#00f0ff]', glow: 'rgba(0,240,255,0.08)' },
+  'asset-librarian': { text: 'text-[#bf5af2]', glow: 'rgba(191,90,242,0.08)' },
+};
+
+export default async function DashboardPage() {
   const counts = getProjectCounts();
   const prodCounts = getProductionCounts();
   const activeProjects = getProjects().filter((p) => p.status !== 'archived' && p.status !== 'published').slice(0, 3);
   const activeProductions = getProductions().filter((p) => p.status !== 'archived' && p.status !== 'published').slice(0, 5);
   const recentAssets = getRecentAssets(5);
+
+  // OpenClaw status
+  let openclawStatus: { available: boolean; mode: string; gateway?: { version?: string; agents?: string[] } } = { available: false, mode: 'direct' };
+  try {
+    openclawStatus = await getOpenClawStatus();
+  } catch { /* gateway offline */ }
 
   const totalProductions = Object.values(prodCounts).reduce((a, b) => a + b, 0);
   const inProductionCount = (prodCounts['in_production'] || 0) + (prodCounts['editing'] || 0) + (prodCounts['review'] || 0);
@@ -38,6 +70,7 @@ export default function DashboardPage() {
     { href: '/assistant', label: 'AI DIRECTOR', icon: Sparkles, glow: 'hover:shadow-[0_0_20px_rgba(191,90,242,0.15)]', color: 'text-[#bf5af2]', border: 'hover:border-[#bf5af2]/30' },
     { href: '/shots', label: 'SHOT DESIGN', icon: Crosshair, glow: 'hover:shadow-[0_0_20px_rgba(57,255,20,0.15)]', color: 'text-[#39ff14]', border: 'hover:border-[#39ff14]/30' },
     { href: '/deliverables', label: 'DELIVERABLES', icon: Package, glow: 'hover:shadow-[0_0_20px_rgba(255,184,0,0.15)]', color: 'text-[#ffb800]', border: 'hover:border-[#ffb800]/30' },
+    { href: '/agents', label: 'AGENT CREW', icon: Bot, glow: 'hover:shadow-[0_0_20px_rgba(57,255,20,0.15)]', color: 'text-[#39ff14]', border: 'hover:border-[#39ff14]/30' },
   ];
 
   return (
@@ -56,9 +89,25 @@ export default function DashboardPage() {
           </h1>
           <p className="text-xs font-mono text-muted mt-1 tracking-wider">▸ CINEMA &amp; MEDIA PRODUCTION OS</p>
         </div>
-        <div className="text-right text-[10px] font-mono text-muted/50 tracking-wider">
+        <div className="text-right text-[10px] font-mono text-muted/50 tracking-wider space-y-0.5">
           <p>LOCAL::M4-AIR</p>
           <p className="text-[#39ff14]/40">OLLAMA::CONNECTED</p>
+          <div className="flex items-center justify-end gap-1.5">
+            {openclawStatus.available ? (
+              <>
+                <Wifi className="h-3 w-3 text-[#00f0ff]/60" />
+                <span className="text-[#00f0ff]/60">OPENCLAW::ONLINE</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="h-3 w-3 text-muted/30" />
+                <span className="text-muted/30">OPENCLAW::OFFLINE</span>
+              </>
+            )}
+          </div>
+          <p className={`${openclawStatus.available ? 'text-[#bf5af2]/40' : 'text-muted/20'}`}>
+            MODE::{openclawStatus.mode.toUpperCase()}
+          </p>
         </div>
       </div>
 
@@ -88,7 +137,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         {quickActions.map((action) => {
           const Icon = action.icon;
           return (
@@ -207,6 +256,63 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* OpenClaw Agent Crew */}
+      <div className="neon-card">
+        <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Bot className="h-4 w-4 text-[#39ff14]" />
+            <h2 className="text-xs font-mono font-semibold tracking-wider text-[#39ff14]">OPENCLAW::AGENT CREW</h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <div className={`status-dot ${openclawStatus.available ? 'bg-[#39ff14]' : 'bg-muted/30'}`} />
+              <span className={`text-[10px] font-mono tracking-wider ${openclawStatus.available ? 'text-[#39ff14]/60' : 'text-muted/30'}`}>
+                {openclawStatus.available ? 'GATEWAY LIVE' : 'GATEWAY OFFLINE'}
+              </span>
+            </div>
+            <Link href="/agents" className="text-[10px] font-mono text-[#00f0ff]/60 hover:text-[#00f0ff] tracking-wider transition-colors">VIEW ALL →</Link>
+          </div>
+        </div>
+        {openclawStatus.gateway?.version && (
+          <div className="px-4 py-1.5 border-b border-border/30 flex items-center gap-2 text-[9px] font-mono text-muted/40 tracking-wider">
+            <Shield className="h-3 w-3" />
+            <span>v{openclawStatus.gateway.version}</span>
+            <span className="mx-1">·</span>
+            <span>{openclawStatus.gateway.agents?.length || 0} agents registered</span>
+            <span className="mx-1">·</span>
+            <span>MODE::{openclawStatus.mode.toUpperCase()}</span>
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-0 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+          {AGENT_ROLES.map((role) => {
+            const colors = AGENT_COLORS[role] || { text: 'text-muted', glow: 'rgba(100,100,100,0.08)' };
+            const profile = AGENT_TOOL_ICONS[role] || 'coding';
+            const isRegistered = openclawStatus.gateway?.agents?.includes(role) ?? false;
+            return (
+              <Link
+                key={role}
+                href="/agents"
+                className="group flex flex-col items-center p-4 border-r border-b border-border/20 last:border-r-0 hover:bg-white/[0.02] transition-all relative"
+              >
+                <div className="relative mb-2">
+                  <Bot className={`h-5 w-5 ${colors.text} opacity-70 group-hover:opacity-100 transition-opacity`} />
+                  {openclawStatus.available && isRegistered && (
+                    <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#39ff14] shadow-[0_0_6px_rgba(57,255,20,0.5)]" />
+                  )}
+                </div>
+                <span className={`text-[10px] font-mono font-medium tracking-wider ${colors.text} opacity-80 text-center leading-tight`}>
+                  {AGENT_DISPLAY_NAMES[role].split(' ').map(w => w.slice(0, 4).toUpperCase()).join(' ')}
+                </span>
+                <span className="mt-1 text-[8px] font-mono text-muted/30 tracking-wider">
+                  {profile.toUpperCase()}
+                </span>
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full opacity-0 group-hover:opacity-60 transition-opacity" style={{ background: colors.glow.replace('0.08', '0.6') }} />
+              </Link>
+            );
+          })}
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 import { getPreferences } from '@/lib/data';
 import PreferencesEditor from '@/components/PreferencesEditor';
 import { Settings, Cpu, Database, Rocket } from 'lucide-react';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,12 +73,18 @@ export default function SettingsPage() {
                 'Export pipelines',
                 'Agent-based task execution',
               ].map((item) => (
-                <div key={item} className="flex items-center gap-2 text-[10px] font-mono text-muted/40 tracking-wider">
-                  <div className="h-1 w-1 rounded-full bg-[#39ff14]/30" />
+                <div key={item} className="flex items-center gap-2 text-[10px] font-mono text-[#39ff14]/60 tracking-wider">
+                  <div className="h-1 w-1 rounded-full bg-[#39ff14]/50" />
                   {item}
                 </div>
               ))}
             </div>
+            <Link
+              href="/integrations"
+              className="mt-3 inline-flex items-center gap-1.5 text-[10px] font-mono text-[#39ff14] hover:text-[#39ff14] tracking-wider"
+            >
+              VIEW INTEGRATIONS →
+            </Link>
           </div>
         </div>
       </div>

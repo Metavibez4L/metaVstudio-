@@ -1,0 +1,147 @@
+{
+  "$schema": "https://openclaw.ai/schema/config.json",
+  "agents": {
+    "defaults": {
+      "workspace": "./.openclaw/workspaces/main",
+      "model": "ollama/kimi-k2.5:cloud"
+    },
+    "list": [
+      {
+        "id": "executive-producer",
+        "name": "Executive Producer",
+        "default": true,
+        "workspace": "./.openclaw/workspaces/executive-producer",
+        "identity": { "name": "Executive Producer" },
+        "tools": {
+          "profile": "full",
+          "deny": ["canvas", "nodes", "cron", "message"],
+          "allow": [
+            "group:sessions",
+            "group:memory",
+            "group:fs",
+            "group:web",
+            "group:runtime",
+            "session_status",
+            "agents_list",
+            "image"
+          ]
+        },
+        "subagents": {
+          "allowAgents": ["*"]
+        }
+      },
+      {
+        "id": "creative-director",
+        "name": "Creative Director",
+        "workspace": "./.openclaw/workspaces/creative-director",
+        "identity": { "name": "Creative Director" },
+        "tools": {
+          "profile": "coding",
+          "allow": [
+            "group:fs",
+            "group:web",
+            "group:memory",
+            "image",
+            "browser"
+          ],
+          "deny": ["group:runtime", "canvas", "nodes", "cron", "message"]
+        }
+      },
+      {
+        "id": "script-architect",
+        "name": "Script Architect",
+        "workspace": "./.openclaw/workspaces/script-architect",
+        "identity": { "name": "Script Architect" },
+        "tools": {
+          "profile": "coding",
+          "allow": [
+            "group:fs",
+            "group:web",
+            "group:memory"
+          ],
+          "deny": ["group:runtime", "browser", "canvas", "nodes", "cron", "message", "image"]
+        }
+      },
+      {
+        "id": "shot-planner",
+        "name": "Shot Planner",
+        "workspace": "./.openclaw/workspaces/shot-planner",
+        "identity": { "name": "Shot Planner" },
+        "tools": {
+          "profile": "coding",
+          "allow": [
+            "group:fs",
+            "group:web",
+            "group:memory",
+            "image"
+          ],
+          "deny": ["group:runtime", "canvas", "nodes", "cron", "message"]
+        }
+      },
+      {
+        "id": "post-supervisor",
+        "name": "Post Supervisor",
+        "workspace": "./.openclaw/workspaces/post-supervisor",
+        "identity": { "name": "Post Supervisor" },
+        "tools": {
+          "profile": "coding",
+          "allow": [
+            "group:fs",
+            "group:runtime",
+            "group:web",
+            "group:memory",
+            "pdf"
+          ],
+          "deny": ["browser", "canvas", "nodes", "cron", "message", "image"]
+        }
+      },
+      {
+        "id": "campaign-strategist",
+        "name": "Campaign Strategist",
+        "workspace": "./.openclaw/workspaces/campaign-strategist",
+        "identity": { "name": "Campaign Strategist" },
+        "tools": {
+          "profile": "coding",
+          "allow": [
+            "group:fs",
+            "group:web",
+            "group:memory",
+            "browser"
+          ],
+          "deny": ["group:runtime", "canvas", "nodes", "cron", "image"]
+        }
+      },
+      {
+        "id": "asset-librarian",
+        "name": "Asset Librarian",
+        "workspace": "./.openclaw/workspaces/asset-librarian",
+        "identity": { "name": "Asset Librarian" },
+        "tools": {
+          "profile": "coding",
+          "allow": [
+            "group:fs",
+            "group:runtime",
+            "group:memory",
+            "image"
+          ],
+          "deny": ["browser", "canvas", "nodes", "cron", "message", "group:web"]
+        }
+      }
+    ]
+  },
+  "tools": {
+    "profile": "coding",
+    "web": {
+      "search": { "enabled": true },
+      "fetch": { "enabled": true }
+    },
+    "loopDetection": {
+      "enabled": true,
+      "warningThreshold": 8,
+      "criticalThreshold": 16
+    }
+  },
+  "gateway": {
+    "port": 18789
+  }
+}

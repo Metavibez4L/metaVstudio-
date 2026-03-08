@@ -16,6 +16,8 @@ import {
   Settings,
   Zap,
   Clapperboard,
+  Bot,
+  Plug,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -28,6 +30,8 @@ const NAV_ITEMS = [
   { href: '/campaigns', label: 'CAMPAIGNS', icon: Megaphone, accent: 'green' },
   { href: '/post', label: 'POST', icon: SlidersHorizontal, accent: 'magenta' },
   { href: '/assistant', label: 'AI DIRECTOR', icon: Sparkles, accent: 'cyan' },
+  { href: '/agents', label: 'AGENTS', icon: Bot, accent: 'magenta' },
+  { href: '/integrations', label: 'INTEGRATE', icon: Plug, accent: 'green' },
   { href: '/assets', label: 'ASSETS', icon: FolderOpen, accent: 'green' },
   { href: '/settings', label: 'CONFIG', icon: Settings, accent: 'cyan' },
 ];

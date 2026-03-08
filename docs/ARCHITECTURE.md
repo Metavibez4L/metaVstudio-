@@ -11,6 +11,16 @@ metaVstudio-/
 ├── docs/                          # Documentation
 ├── data/                          # SQLite database (gitignored)
 │   └── metavstudio.db
+├── .openclaw/                     # OpenClaw agent workspaces
+│   └── workspaces/
+│       ├── executive-producer/SOUL.md
+│       ├── creative-director/SOUL.md
+│       ├── script-architect/SOUL.md
+│       ├── shot-planner/SOUL.md
+│       ├── post-supervisor/SOUL.md
+│       ├── campaign-strategist/SOUL.md
+│       └── asset-librarian/SOUL.md
+├── openclaw.json                  # OpenClaw gateway config (7 agents, tool profiles)
 ├── public/                        # Static assets
 ├── src/
 │   ├── app/                       # Next.js App Router
@@ -28,6 +38,7 @@ metaVstudio-/
 │   │   ├── post/page.tsx          # Post-production / edit versions
 │   │   ├── assistant/page.tsx     # AI Director (chat interface)
 │   │   ├── agents/page.tsx        # Agent production team dashboard
+│   │   ├── integrations/page.tsx  # Integration dashboard (6 modules)
 │   │   ├── assets/page.tsx        # Cross-project asset library
 │   │   ├── settings/page.tsx      # Creator preferences
 │   │   ├── projects/              # Legacy project pages
@@ -41,6 +52,8 @@ metaVstudio-/
 │   │       ├── agents/
 │   │       │   ├── invoke/route.ts    # Agent invocation + orchestration
 │   │       │   └── directory/route.ts # Agent roster & capabilities
+│   │       ├── integrations/
+│   │       │   └── route.ts           # Integration health + action execution
 │   │       ├── ai/
 │   │       │   ├── chat/route.ts     # AI Director chat endpoint
 │   │       │   ├── generate/route.ts # Content generation endpoint
@@ -48,7 +61,7 @@ metaVstudio-/
 │   │       ├── health/route.ts       # System health check
 │   │       └── preferences/route.ts  # Settings API
 │   ├── components/
-│   │   ├── Sidebar.tsx               # Navigation (12 items)
+│   │   ├── Sidebar.tsx               # Navigation (13 items)
 │   │   ├── ProductionCreateButton.tsx # New production modal
 │   │   ├── ProductionEditor.tsx       # Production CRUD + status pipeline
 │   │   ├── ProjectCreateButton.tsx    # Legacy project modal
@@ -64,10 +77,11 @@ metaVstudio-/
 │       ├── production-data.ts     # Production CRUD (543 lines, 9 entities)
 │       ├── agents/                # Multi-agent production system
 │       │   ├── types.ts           # Agent contracts, task schemas, output types
-│       │   ├── base-agent.ts      # BaseAgent abstract class
+│       │   ├── base-agent.ts      # BaseAgent abstract class (dual-mode: direct/openclaw)
 │       │   ├── context.ts         # ProductionContext builder from DB
 │       │   ├── registry.ts        # Agent registry singleton
 │       │   ├── orchestrator.ts    # EP dispatch engine + orchestration
+│       │   ├── openclaw-client.ts # OpenClaw gateway HTTP client
 │       │   ├── index.ts           # Public barrel exports
 │       │   └── agents/
 │       │       ├── executive-producer.ts
@@ -77,6 +91,16 @@ metaVstudio-/
 │       │       ├── post-supervisor.ts
 │       │       ├── campaign-strategist.ts
 │       │       └── asset-librarian.ts
+│       ├── integrations/          # macOS native integrations
+│       │   ├── types.ts           # Integration types, presets, constants
+│       │   ├── applescript.ts     # AppleScript execution (9 commands via osascript)
+│       │   ├── shortcuts.ts       # macOS Shortcuts.app CLI runner
+│       │   ├── folder-watcher.ts  # fs.watch directory monitoring (25+ extensions)
+│       │   ├── obs.ts             # OBS WebSocket v5 control (8 actions)
+│       │   ├── export-pipeline.ts # ffmpeg encoding (8 platform presets)
+│       │   ├── agent-tasks.ts     # 20 predefined agent tasks (6 categories)
+│       │   ├── registry.ts        # Integration health check system
+│       │   └── index.ts           # Barrel exports
 │       ├── ai/
 │       │   └── provider.ts        # AI provider abstraction + content prompts
 │       ├── config/
@@ -143,6 +167,26 @@ metaVstudio-/
 └─────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────┐
+│            OpenClaw Layer                        │
+│  openclaw-client.ts → Gateway HTTP API           │
+│  Dual-mode: direct (Ollama) / openclaw (tools)   │
+│  Per-agent tool profiles (fs, web, exec, image)  │
+│  SOUL.md workspaces for agent identity            │
+│  Gateway: http://127.0.0.1:18789                 │
+└─────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────┐
+│           Integrations Layer                     │
+│  6 macOS-native modules:                         │
+│  AppleScript (osascript) │ Shortcuts (CLI)       │
+│  Folder Watcher (fs.watch) │ OBS (WebSocket v5)  │
+│  Export Pipeline (ffmpeg, 8 presets)              │
+│  Agent Tasks (20 tasks, 6 categories)            │
+│  Registry: health checks per integration         │
+│  API: GET /api/integrations, POST actions         │
+└─────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────┐
 │              Config Layer                        │
 │  env.ts → getConfig() singleton                  │
 │  Profiles: laptop / studio / cloud               │
@@ -199,6 +243,10 @@ User Input → Client fetch('/api/ai/chat')
 6. **Config-driven deployment** — `DEPLOYMENT_PROFILE` env var switches between laptop/studio/cloud presets, changing AI models, storage paths, and feature flags.
 
 7. **Multi-agent orchestration** — 7 specialized agents with clear roles and boundaries. Executive Producer coordinates, specialists stay in-role. Handoff protocol chains work across agents. Laptop mode runs sequential inline; studio mode enables parallel execution.
+
+8. **OpenClaw tooling layer** — Agents can execute via the OpenClaw gateway for real tool access (filesystem, shell, web search, browser, image gen). Dual-mode execution: `direct` (Ollama only), `openclaw` (gateway + tools), `auto` (detect gateway availability). Each agent has a SOUL.md identity file and a scoped tool profile defined in `openclaw.json`.
+
+9. **macOS-native integrations** — 6 integration modules using native CLI tools (osascript, shortcuts, ffmpeg) and Node.js APIs (fs.watch, HTTP). Each integration has a health check, typed interface, and is accessible via the `/api/integrations` endpoint. Export pipeline supports 8 platform presets. Agent task execution bridges the agent system to integration actions.
 
 ---
 

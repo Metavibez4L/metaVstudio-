@@ -11,11 +11,13 @@
 |--------|-------|
 | **Build** | ✅ Passing |
 | **TypeScript** | ✅ Strict, zero errors |
-| **Routes** | 25 (16 dynamic, 4 static, 5 API) |
-| **Source Files** | 62 |
-| **Total Lines** | ~8,300 |
-| **Agent Files** | 13 (~1,860 lines) |
+| **Routes** | 27 (18 dynamic, 4 static, 5 API) |
+| **Source Files** | 74 |
+| **Total Lines** | ~10,290 |
+| **Agent Files** | 14 (~2,190 lines) |
+| **Integration Files** | 10 (~1,200 lines) |
 | **Framework** | Next.js 16.1.6 (Turbopack) |
+| **OpenClaw** | ✅ Integrated (v2026.3.2) |
 
 ---
 
@@ -27,6 +29,8 @@
 - **Database**: SQLite (better-sqlite3, WAL mode, foreign keys)
 - **AI Engine**: Ollama (local inference, kimi-k2.5:cloud model)
 - **Agent System**: 7 production agents, orchestration engine, handoff protocol
+- **Agent Tooling**: OpenClaw gateway (real tools: fs, exec, web, browser, image, memory)
+- **Integrations**: 6 macOS-native modules (AppleScript, Shortcuts, Folder Watchers, OBS, Export Pipelines, Agent Tasks)
 - **UI**: Tailwind CSS v4, cyberpunk/neon design system
 - **Storage**: Local filesystem, `./data/metavstudio.db`
 
@@ -49,6 +53,7 @@
 | AI Director (chat) | `/assistant` | ✅ Live |
 | Agent Production Team | `/agents` | ✅ Live |
 | Asset Library | `/assets` | ✅ Live |
+| Integrations Dashboard | `/integrations` | ✅ Live |
 | Settings / Config | `/settings` | ✅ Live |
 
 ### Legacy Layer (v1.0 — Preserved)
@@ -70,6 +75,8 @@
 | `GET/PUT /api/preferences` | Creator preferences | ✅ Live |
 | `POST /api/agents/invoke` | Agent invocation + orchestration | ✅ Live |
 | `GET /api/agents/directory` | Agent roster & capabilities | ✅ Live |
+| `GET /api/integrations` | Integration health & status | ✅ Live |
+| `POST /api/integrations` | Execute integration actions | ✅ Live |
 
 ---
 
@@ -129,6 +136,41 @@ INGESTED → EDITING → REVIEW → REVISION → FINAL DELIVERY → PUBLISHED �
 
 ## Multi-Agent Production System (v3.0)
 
+### OpenClaw Integration
+
+Agents now support dual-mode execution via the [OpenClaw](https://docs.openclaw.ai/) gateway, giving them access to real system tools:
+
+| Feature | Details |
+|---------|---------|
+| **Gateway** | `http://127.0.0.1:18789` (local) |
+| **Version** | v2026.3.2 |
+| **Config** | `openclaw.json` (root) |
+| **Workspaces** | `.openclaw/workspaces/{agent}/SOUL.md` |
+| **Execution Modes** | `direct` (Ollama only), `openclaw` (gateway + tools), `auto` (detect) |
+
+#### Agent Tool Profiles
+
+| Agent | Profile | Allowed Tools |
+|-------|---------|---------------|
+| Executive Producer | `full` | sessions, memory, fs, web, runtime, image |
+| Creative Director | `coding` | fs, web, memory, image, browser |
+| Script Architect | `coding` | fs, web, memory |
+| Shot Planner | `coding` | fs, web, memory, image |
+| Post Supervisor | `coding` | fs, runtime, web, memory, pdf |
+| Campaign Strategist | `coding` | fs, web, memory, browser |
+| Asset Librarian | `coding` | fs, runtime, memory, image |
+
+#### OpenClaw Tool Groups
+
+- **group:fs** — read_file, write_file, edit_file, apply_patch
+- **group:runtime** — exec, process (shell commands)
+- **group:web** — web_search, web_fetch
+- **group:memory** — memory_search, memory_get (persistent agent memory)
+- **group:sessions** — sessions_spawn, sessions_send, sessions_list, sessions_status
+- **browser** — headless browser interaction
+- **image** — image generation/analysis
+- **pdf** — PDF reading/creation
+
 ### Agent Hierarchy
 
 ```
@@ -181,8 +223,7 @@ Agents declare handoffs when their output requires another specialist:
 | Language | TypeScript (strict) | 5.x |
 | Styling | Tailwind CSS | v4 |
 | Database | better-sqlite3 | 12.6.2 |
-| AI | Ollama (OpenAI-compatible API) | Local |
-| Icons | lucide-react | 0.577.0 |
+| AI | Ollama (OpenAI-compatible API) | Local || Agent Tooling | OpenClaw | v2026.3.2 || Icons | lucide-react | 0.577.0 |
 | IDs | uuid | 13.0.0 |
 | Dates | date-fns | 4.1.0 |
 
@@ -205,6 +246,19 @@ Agents declare handoffs when their output requires another specialist:
 - [x] Agent dashboard with hierarchy visualization (`/agents`)
 - [x] Handoff protocol between agents
 - [x] 40+ agent task types with structured output schemas
+- [x] OpenClaw integration: dual-mode execution (direct / openclaw / auto)
+- [x] OpenClaw agent tooling: per-agent tool profiles, SOUL.md workspaces
+- [x] OpenClaw gateway client (`openclaw-client.ts`)
+- [x] Dashboard: OpenClaw status, agent crew panel, gateway diagnostics
+- [x] Integrations: AppleScript automation (9 commands via osascript)
+- [x] Integrations: macOS Shortcuts runner (Shortcuts.app CLI)
+- [x] Integrations: Folder Watchers (fs.watch, 25+ media extensions)
+- [x] Integrations: OBS WebSocket control (8 actions, recording/streaming/scenes)
+- [x] Integrations: Export Pipelines (ffmpeg, 8 platform presets)
+- [x] Integrations: Agent Task Execution (20 tasks, 6 categories)
+- [x] Integration registry with health checks
+- [x] Integration API (GET status, POST execute)
+- [x] Integrations dashboard UI (`/integrations`)
 - [ ] Production ↔ Asset linking (production-scoped asset management)
 - [ ] Inline CRUD on detail pages (briefs, scenes, shots from /productions/[id])
 - [ ] DaVinci Resolve / Frame.io integration hooks

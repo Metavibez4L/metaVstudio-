@@ -200,10 +200,11 @@ The agent system (`src/lib/agents/`) provides a disciplined multi-agent architec
 ```
 src/lib/agents/
 ├── types.ts              # Agent contracts, 40+ task types, typed outputs
-├── base-agent.ts         # BaseAgent abstract class (AI provider, parsing)
+├── base-agent.ts         # BaseAgent abstract class (dual-mode execution)
 ├── context.ts            # Builds ProductionContext from DB
 ├── registry.ts           # Agent registry singleton
 ├── orchestrator.ts       # EP dispatch + multi-agent orchestration
+├── openclaw-client.ts    # OpenClaw gateway HTTP client
 ├── index.ts              # Public barrel
 └── agents/
     ├── executive-producer.ts   # Orchestrator → routes, tracks, prioritizes
@@ -223,16 +224,20 @@ src/lib/agents/
   "taskType": "creative-brief",
   "goal": "Create a brief for a luxury watch brand film",
   "productionId": "uuid-here",
-  "platform": "youtube"
+  "platform": "youtube",
+  "mode": "auto"
 }
 ```
+
+`mode` can be `"direct"` (Ollama only), `"openclaw"` (gateway + tools), or `"auto"` (detect gateway, default).
 
 **Orchestrated Execution — `POST /api/agents/invoke`**
 ```json
 {
   "orchestrate": true,
   "goal": "Plan the full pre-production for this project",
-  "productionId": "uuid-here"
+  "productionId": "uuid-here",
+  "mode": "auto"
 }
 ```
 
@@ -253,9 +258,75 @@ Agents return `HandoffRequest[]` to trigger work in other agents:
 
 | Mode | Behavior |
 |------|----------|
+| **direct** | Ollama/OpenAI only — no external tools, fast, offline-safe |
+| **openclaw** | OpenClaw gateway — agents get real tools (fs, exec, web, image, browser) |
+| **auto** | Detect gateway availability; fall back to direct if offline |
 | **Laptop** | Sequential inline execution, 1-level handoff depth |
 | **Studio** | Parallel execution, 2-level handoff depth, 4 concurrent AI |
 | **Cloud** | Full parallel, 8 concurrent AI, OpenAI provider |
+
+---
+
+## OpenClaw Integration
+
+The agent system integrates with [OpenClaw](https://docs.openclaw.ai/) (v2026.3.2) to give agents access to real system tools via the OpenClaw gateway.
+
+### Configuration
+
+**Root config** — `openclaw.json`:
+- Defines 7 agents with per-agent tool profiles
+- Sets gateway port (18789), loop detection, default model
+- Each agent has `allow`/`deny` tool lists and a profile (`full` or `coding`)
+
+**Agent workspaces** — `.openclaw/workspaces/{agent}/SOUL.md`:
+- Agent identity, personality, role definition
+- Tool usage guides mapping to allowed OpenClaw tools
+- Boundaries, standards, output format instructions
+
+**Environment variables:**
+```env
+OPENCLAW_ENABLED=true              # Enable OpenClaw execution mode
+OPENCLAW_GATEWAY_URL=http://127.0.0.1:18789
+OPENCLAW_GATEWAY_TOKEN=            # Optional auth token
+OPENCLAW_TIMEOUT_MS=120000         # Gateway request timeout
+```
+
+### Gateway Client (`openclaw-client.ts`)
+
+```
+getOpenClawConfig()          → OpenClawConfig
+spawnAgentRun(request)       → OpenClawSpawnResult  (POST /api/v1/sessions/spawn)
+sendToSession(key, msg)      → string               (POST /api/v1/sessions/send)
+listSessions()               → SessionInfo[]        (POST /api/v1/sessions/list)
+getSessionStatus(key?)       → StatusInfo            (POST /api/v1/sessions/status)
+checkGatewayHealth()         → { ok, version, agents[] }  (GET /health)
+executeViaOpenClaw(role, task, goal, opts) → AgentResult  (high-level)
+isOpenClawAvailable()        → boolean               (health check)
+```
+
+### Dual-Mode Execution Flow
+
+```
+API Request → Orchestrator.resolveMode()
+  ├── mode="direct"   → BaseAgent.executeDirect()  → Ollama/OpenAI
+  ├── mode="openclaw" → BaseAgent.executeViaOpenClaw() → Gateway → Real Tools
+  └── mode="auto"     → check OPENCLAW_ENABLED + gateway health
+                        ├── gateway online  → openclaw mode
+                        └── gateway offline → direct mode
+```
+
+### Tool Groups Available
+
+| Group | Tools | Used By |
+|-------|-------|---------|
+| `group:fs` | read_file, write_file, edit_file, apply_patch | All agents |
+| `group:runtime` | exec, process (shell) | EP, Post Supervisor, Asset Librarian |
+| `group:web` | web_search, web_fetch | EP, Creative Dir, Script, Shot, Post, Campaign |
+| `group:memory` | memory_search, memory_get | All agents |
+| `group:sessions` | spawn, send, list, status | EP (sub-agent routing) |
+| `browser` | Headless browser | Creative Dir, Campaign Strategist |
+| `image` | Image gen/analysis | EP, Creative Dir, Shot Planner, Asset Librarian |
+| `pdf` | PDF reading/creation | Post Supervisor |
 
 ---
 
@@ -269,3 +340,69 @@ The runtime layer (`src/lib/runtime/task-runner.ts`) provides infrastructure for
 - Priority-based task scheduling
 
 This layer is built but not yet wired to the UI.
+
+---
+
+## Integrations System
+
+The integrations layer (`src/lib/integrations/`) provides 6 macOS-native modules that extend the production OS with real system capabilities.
+
+### Architecture
+
+```
+src/lib/integrations/
+├── types.ts           # Types, presets, constants for all 6 integrations
+├── applescript.ts     # AppleScript execution via osascript CLI
+├── shortcuts.ts       # macOS Shortcuts.app CLI runner
+├── folder-watcher.ts  # fs.watch directory monitoring
+├── obs.ts             # OBS WebSocket v5 control
+├── export-pipeline.ts # ffmpeg-based encoding pipeline
+├── agent-tasks.ts     # 20 predefined agent task definitions
+├── registry.ts        # Health check system for all integrations
+└── index.ts           # Barrel exports
+```
+
+### Integration Modules
+
+| Module | External Tool | Capabilities |
+|--------|--------------|--------------|
+| **AppleScript** | `osascript` CLI | 9 commands: open/activate/quit app, Finder reveal, notification, Screen Studio record/stop, DaVinci Resolve open, custom scripts |
+| **Shortcuts** | `shortcuts` CLI | Run any macOS Shortcut by name with optional text input, list all available shortcuts |
+| **Folder Watcher** | Node.js `fs.watch` | Monitor directories for media files (25+ extensions), event log (200 cap), 3 default watch folders |
+| **OBS Control** | OBS WebSocket v5 | 8 actions: get-status, start/stop-recording, start/stop-streaming, switch-scene, get-scenes, toggle-source |
+| **Export Pipeline** | `ffmpeg` CLI | 8 platform presets (YouTube 4K/1080, TikTok 9:16, Instagram 1:1, Meta Ad, Web VP9, Archive ProRes, Custom), job queue |
+| **Agent Tasks** | Internal | 20 predefined tasks across 6 categories (content-generation, production-planning, review-analysis, export-automation, file-management, campaign-execution) |
+
+### Export Presets
+
+| Preset | Resolution | Codec | Format |
+|--------|-----------|-------|--------|
+| `youtube-4k` | 3840×2160 | H.264 | MP4 |
+| `youtube-1080` | 1920×1080 | H.264 | MP4 |
+| `tiktok-9x16` | 1080×1920 | H.264 | MP4 |
+| `instagram-1x1` | 1080×1080 | H.264 | MP4 |
+| `meta-ad` | 1200×628 | H.264 | MP4 |
+| `web-optimized` | 1920×1080 | VP9 | WebM |
+| `archive` | Source | ProRes | MOV |
+| `custom` | User-defined | User-defined | User-defined |
+
+### Integration API
+
+**`GET /api/integrations`** — Returns health status for all 6 modules, export presets, active jobs, watcher events, agent task categories.
+
+**`POST /api/integrations`** — Execute actions:
+```json
+{
+  "integration": "applescript",
+  "action": "run",
+  "params": { "command": "notification", "args": { "title": "Done", "message": "Export complete" } }
+}
+```
+
+Supported integration+action combos:
+- `applescript` → `run`
+- `shortcuts` → `run`, `list`
+- `obs` → Any OBS action (start-recording, switch-scene, etc.)
+- `folder-watcher` → `status`
+- `export-pipeline` → `list-presets`, `list-jobs`
+- `agent-tasks` → `list`
